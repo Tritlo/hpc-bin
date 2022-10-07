@@ -10,6 +10,7 @@ Synopsis: XXX
 Description: XXX
 Category: Development
 extra-source-files: README.md
+                  , CHANGELOG.md
 build-type: Simple
 cabal-version: 2.0
 
