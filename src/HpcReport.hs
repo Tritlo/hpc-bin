@@ -12,17 +12,23 @@ import Trace.Hpc.Mix
 import Trace.Hpc.Tix
 import Control.Monad hiding (guard)
 import qualified Data.Set as Set
+import Data.Function (on)
 
 notExpecting :: String -> a
 notExpecting s = error ("not expecting "++s)
 
 data BoxTixCounts = BT {boxCount, tixCount :: !Int}
 
-btZero :: BoxTixCounts
-btZero = BT {boxCount=0, tixCount=0}
-
-btPlus :: BoxTixCounts -> BoxTixCounts -> BoxTixCounts
-btPlus (BT b1 t1) (BT b2 t2) = BT (b1+b2) (t1+t2)
+instance Semigroup BoxTixCounts where
+  bt1 <> bt2 = BT 
+    { boxCount = ((+) `on` boxCount) bt1 bt2
+    , tixCount = ((+) `on` tixCount) bt1 bt2
+    } 
+instance Monoid BoxTixCounts where
+  mempty = BT 
+    { boxCount=0
+    , tixCount=0
+    }
 
 btPercentage :: String -> BoxTixCounts -> String
 btPercentage s (BT b t) = showPercentage s t b
@@ -44,15 +50,20 @@ data BinBoxTixCounts = BBT { binBoxCount
                            , onlyFalseTixCount
                            , bothTixCount :: !Int}
 
-bbtzero :: BinBoxTixCounts
-bbtzero = BBT { binBoxCount=0
-              , onlyTrueTixCount=0
-              , onlyFalseTixCount=0
-              , bothTixCount=0}
-
-bbtPlus :: BinBoxTixCounts -> BinBoxTixCounts -> BinBoxTixCounts
-bbtPlus (BBT b1 tt1 ft1 bt1) (BBT b2 tt2 ft2 bt2) =
-  BBT (b1+b2) (tt1+tt2) (ft1+ft2) (bt1+bt2)
+instance Semigroup BinBoxTixCounts where
+  bbt1 <> bbt2 = BBT 
+    { binBoxCount       = ((+) `on` binBoxCount)       bbt1 bbt2
+    , onlyTrueTixCount  = ((+) `on` onlyTrueTixCount)  bbt1 bbt2
+    , onlyFalseTixCount = ((+) `on` onlyFalseTixCount) bbt1 bbt2
+    , bothTixCount      = ((+) `on` bothTixCount)      bbt1 bbt2
+    }
+instance Monoid BinBoxTixCounts where
+  mempty = BBT 
+    { binBoxCount=0
+    , onlyTrueTixCount=0
+    , onlyFalseTixCount=0
+    , bothTixCount=0
+    }      
 
 bbtPercentage :: String -> Bool -> BinBoxTixCounts -> String
 bbtPercentage s withdetail (BBT b tt ft bt) =
@@ -70,26 +81,28 @@ data ModInfo = MI { exp,alt,top,loc :: !BoxTixCounts
                   , guard,cond,qual :: !BinBoxTixCounts
                   , decPaths :: [[String]]}
 
-miZero :: ModInfo
-miZero = MI { exp=btZero
-            , alt=btZero
-            , top=btZero
-            , loc=btZero
-            , guard=bbtzero
-            , cond=bbtzero
-            , qual=bbtzero
-            , decPaths = []}
-
-miPlus :: ModInfo -> ModInfo -> ModInfo
-miPlus mi1 mi2 =
-  MI { exp = exp mi1 `btPlus` exp mi2
-     , alt = alt mi1 `btPlus` alt mi2
-     , top = top mi1 `btPlus` top mi2
-     , loc = loc mi1 `btPlus` loc mi2
-     , guard = guard mi1 `bbtPlus` guard mi2
-     , cond  = cond  mi1 `bbtPlus` cond  mi2
-     , qual  = qual  mi1 `bbtPlus` qual  mi2
-     , decPaths = decPaths mi1 ++ decPaths mi2 }
+instance Semigroup ModInfo where
+  mi1 <> mi2 = MI 
+    { exp       = ((<>) `on` exp)      mi1 mi2
+    , alt       = ((<>) `on` alt)      mi1 mi2
+    , top       = ((<>) `on` top)      mi1 mi2
+    , loc       = ((<>) `on` loc)      mi1 mi2
+    , guard     = ((<>) `on` guard)    mi1 mi2
+    , cond      = ((<>) `on` cond)     mi1 mi2
+    , qual      = ((<>) `on` qual)     mi1 mi2
+    , decPaths  = ((<>) `on` decPaths) mi1 mi2
+    }
+instance Monoid ModInfo where
+  mempty = MI 
+    { exp=mempty
+    , alt=mempty
+    , top=mempty
+    , loc=mempty
+    , guard=mempty
+    , cond=mempty
+    , qual=mempty
+    , decPaths=mempty
+    }
 
 allBinCounts :: ModInfo -> BinBoxTixCounts
 allBinCounts mi =
@@ -152,7 +165,7 @@ single (BinBox {}) = False
 modInfo :: Flags -> Bool -> TixModule -> IO ModInfo
 modInfo hpcflags qualDecList tix@(TixModule moduleName _ _ tickCounts) = do
   Mix _ _ _ _ mes <- readMixWithFlags hpcflags (Right tix)
-  return (q (accumCounts (zip (map snd mes) tickCounts) miZero))
+  return (q (accumCounts (zip (map snd mes) tickCounts) mempty))
   where
   q mi = if qualDecList then mi{decPaths = map (moduleName:) (decPaths mi)}
          else mi
@@ -239,7 +252,7 @@ makeReport hpcflags progName modTcs | xmlOutput hpcflags = do
     else return ()
   mis <- mapM (modInfo hpcflags True) modTcs
   putStrLn $ "  <summary>"
-  printModInfo hpcflags (foldr miPlus miZero mis)
+  printModInfo hpcflags (mconcat mis)
   putStrLn $ "  </summary>"
   putStrLn $ "</coverage>"
 makeReport hpcflags _ modTcs =
@@ -247,7 +260,7 @@ makeReport hpcflags _ modTcs =
     mapM_ (modReport hpcflags) modTcs
   else do
     mis <- mapM (modInfo hpcflags True) modTcs
-    printModInfo hpcflags (foldr miPlus miZero mis)
+    printModInfo hpcflags (mconcat mis)
 
 element :: String -> [(String,String)] -> IO ()
 element tag attrs = putStrLn $
