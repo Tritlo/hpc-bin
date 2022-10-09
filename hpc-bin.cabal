@@ -1,24 +1,28 @@
-Name: hpc-bin
--- XXX version number:
-Version: 0.68
-Copyright: XXX
-License: BSD3
--- XXX License-File: LICENSE
-Author: XXX
-Maintainer: XXX
-Synopsis: XXX
-Description: XXX
-Category: Development
+cabal-version: 2.2
+name: hpc-bin
+version: 0.68
+license: BSD-3-Clause
+license-File: LICENSE
+copyright: (c) Andy Gill, Colin Runciman
+author: Andy Gill, Colin Runciman
+maintainer: XXX
+synopsis: Hpc is a tool for generating coverage reports in various output formats for Haskell projects.
+description: Hpc is a tool for generating coverage reports in various output formats for Haskell projects.
+category: Development
+bug-reports: https://gitlab.haskell.org/hpc/hpc-bin/-/issues
 extra-source-files: README.md
                   , CHANGELOG.md
 build-type: Simple
-cabal-version: 2.0
+
+source-repository head
+    type:     git
+    location: https://gitlab.haskell.org/hpc/hpc-bin.git
 
 Flag build-tool-depends
     Description: Use build-tool-depends
     Default: True
 
-Executable hpc
+executable hpc
     Default-Language: Haskell2010
     hs-source-dirs: src
     Main-Is: Main.hs
