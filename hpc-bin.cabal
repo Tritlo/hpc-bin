@@ -22,11 +22,11 @@ Flag build-tool-depends
     Description: Use build-tool-depends
     Default: True
 
-executable hpc
-    Default-Language: Haskell2010
+library
+    default-language: Haskell2010
     hs-source-dirs: src
-    Main-Is: HpcMain.hs
-    Other-Modules: HpcParser
+    exposed-modules: 
+                   HpcParser
                    HpcCombine
                    HpcDraft
                    HpcFlags
@@ -36,11 +36,12 @@ executable hpc
                    HpcReport
                    HpcShowTix
                    HpcUtils
-                   Paths_hpc_bin
+                   HpcMain
 
+    other-modules: Paths_hpc_bin
     autogen-modules: Paths_hpc_bin
 
-    Build-Depends: base       >= 4   && < 5,
+    build-depends: base       >= 4   && < 5,
                    directory  >= 1   && < 1.4,
                    filepath   >= 1   && < 1.5,
                    containers >= 0.1 && < 0.7,
@@ -49,3 +50,11 @@ executable hpc
 
     if flag(build-tool-depends)
       build-tool-depends: happy:happy >= 1.20.0
+
+executable hpc
+    default-language: Haskell2010
+    hs-source-dirs: app
+    main-is: Main.hs
+
+    build-depends: base >= 4 && < 5,
+                   hpc-bin

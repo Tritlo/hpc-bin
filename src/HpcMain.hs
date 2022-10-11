@@ -1,4 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables, TupleSections #-}
+module HpcMain ( main ) where
 -- (c) 2007 Andy Gill
 
 -- Main driver for Hpc
