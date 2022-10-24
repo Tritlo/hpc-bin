@@ -3,4 +3,4 @@ build:
   tags:
     - "x86_64-linux"
   script:
-    - "cabal build -w $GHC"
+    - "cabal update && cabal build -w $GHC"
