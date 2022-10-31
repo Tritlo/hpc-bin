@@ -3,125 +3,122 @@
 -- Andy Gill, Oct 2006
 ---------------------------------------------------------
 
-module HpcCombine (sum_plugin,combine_plugin,map_plugin) where
+module HpcCombine (sumPlugin, combinePlugin, mapPlugin) where
 
-import Trace.Hpc.Tix
-import Trace.Hpc.Util
-
-import HpcFlags
-
-import Control.DeepSeq ( force )
-import Control.Monad ( foldM )
-import qualified Data.Set as Set
+import Control.DeepSeq
+import Control.Monad
 import qualified Data.Map as Map
-
-------------------------------------------------------------------------------
-sum_options :: FlagOptSeq
-sum_options
-        = excludeOpt
-        . includeOpt
-        . outputOpt
-        . unionModuleOpt
-        . verbosityOpt
-
-sum_plugin :: Plugin
-sum_plugin = Plugin { name = "sum"
-                    , usage = "[OPTION] .. <TIX_FILE> [<TIX_FILE> [<TIX_FILE> ..]]"
-                    , options = sum_options
-                    , summary = "Sum multiple .tix files in a single .tix file"
-                    , implementation = sum_main
-                    , init_flags = default_flags
-                    , final_flags = default_final_flags
-                    }
-
-combine_options :: FlagOptSeq
-combine_options
-        = excludeOpt
-        . includeOpt
-        . outputOpt
-        . combineFunOpt
-        . combineFunOptInfo
-        . unionModuleOpt
-        . verbosityOpt
-
-combine_plugin :: Plugin
-combine_plugin = Plugin { name = "combine"
-                        , usage = "[OPTION] .. <TIX_FILE> <TIX_FILE>"
-                        , options = combine_options
-                        , summary = "Combine two .tix files in a single .tix file"
-                        , implementation = combine_main
-                        , init_flags = default_flags
-                        , final_flags = default_final_flags
-                        }
-
-map_options :: FlagOptSeq
-map_options
-        = excludeOpt
-        . includeOpt
-        . outputOpt
-        . mapFunOpt
-        . mapFunOptInfo
-        . unionModuleOpt
-        . verbosityOpt
-
-map_plugin :: Plugin
-map_plugin = Plugin { name = "map"
-                    , usage = "[OPTION] .. <TIX_FILE> "
-                    , options = map_options
-                    , summary = "Map a function over a single .tix file"
-                    , implementation = map_main
-                    , init_flags = default_flags
-                    , final_flags = default_final_flags
-                    }
+import qualified Data.Set as Set
+import HpcFlags
+import Trace.Hpc.Tix
 
 ------------------------------------------------------------------------------
 
-sum_main :: Flags -> [String] -> IO ()
-sum_main _     [] = hpcError sum_plugin $ "no .tix file specified"
-sum_main flags (first_file:more_files) = do
+sumOptions :: FlagOptSeq
+sumOptions =
+  excludeOpt
+    . includeOpt
+    . outputOpt
+    . unionModuleOpt
+    . verbosityOpt
+
+sumPlugin :: Plugin
+sumPlugin =
+  Plugin
+    { name = "sum",
+      usage = "[OPTION] .. <TIX_FILE> [<TIX_FILE> [<TIX_FILE> ..]]",
+      options = sumOptions,
+      summary = "Sum multiple .tix files in a single .tix file",
+      implementation = sumMain,
+      init_flags = defaultFlags,
+      final_flags = defaultFinalFlags
+    }
+
+combineOptions :: FlagOptSeq
+combineOptions =
+  excludeOpt
+    . includeOpt
+    . outputOpt
+    . combineFunOpt
+    . combineFunOptInfo
+    . unionModuleOpt
+    . verbosityOpt
+
+combinePlugin :: Plugin
+combinePlugin =
+  Plugin
+    { name = "combine",
+      usage = "[OPTION] .. <TIX_FILE> <TIX_FILE>",
+      options = combineOptions,
+      summary = "Combine two .tix files in a single .tix file",
+      implementation = combineMain,
+      init_flags = defaultFlags,
+      final_flags = defaultFinalFlags
+    }
+
+mapOptions :: FlagOptSeq
+mapOptions =
+  excludeOpt
+    . includeOpt
+    . outputOpt
+    . mapFunOpt
+    . mapFunOptInfo
+    . unionModuleOpt
+    . verbosityOpt
+
+mapPlugin :: Plugin
+mapPlugin =
+  Plugin
+    { name = "map",
+      usage = "[OPTION] .. <TIX_FILE> ",
+      options = mapOptions,
+      summary = "Map a function over a single .tix file",
+      implementation = mapMain,
+      init_flags = defaultFlags,
+      final_flags = defaultFinalFlags
+    }
+
+------------------------------------------------------------------------------
+
+sumMain :: Flags -> [String] -> IO ()
+sumMain _ [] = hpcError sumPlugin "no .tix file specified"
+sumMain flags (first_file : more_files) = do
   Just tix <- readTix first_file
 
-  tix' <- foldM (mergeTixFile flags (+))
-                (filterTix flags tix)
-                more_files
+  tix' <- foldM (mergeTixFile flags (+)) (filterTix flags tix) more_files
 
   case outputFile flags of
-    "-" -> putStrLn (show tix')
+    "-" -> print tix'
     out -> writeTix out tix'
 
-combine_main :: Flags -> [String] -> IO ()
-combine_main flags [first_file,second_file] = do
+combineMain :: Flags -> [String] -> IO ()
+combineMain flags [first_file, second_file] = do
   let f = theCombineFun (combineFun flags)
 
   Just tix1 <- readTix first_file
   Just tix2 <- readTix second_file
 
-  let tix = mergeTix (mergeModule flags)
-                     f
-                     (filterTix flags tix1)
-                     (filterTix flags tix2)
+  let tix = mergeTix (mergeModule flags) f (filterTix flags tix1) (filterTix flags tix2)
 
   case outputFile flags of
-    "-" -> putStrLn (show tix)
+    "-" -> print tix
     out -> writeTix out tix
-combine_main _     _ = hpcError combine_plugin $ "need exactly two .tix files to combine"
+combineMain _ _ = hpcError combinePlugin "need exactly two .tix files to combine"
 
-map_main :: Flags -> [String] -> IO ()
-map_main flags [first_file] = do
+mapMain :: Flags -> [String] -> IO ()
+mapMain flags [first_file] = do
   let f = thePostFun (postFun flags)
 
   Just tix <- readTix first_file
 
   let (Tix inside_tix) = filterTix flags tix
-  let tix' = Tix [ TixModule m p i (map f t)
-                 | TixModule m p i t <- inside_tix
-                 ]
+  let tix' = Tix [TixModule m p i (map f t) | TixModule m p i t <- inside_tix]
 
   case outputFile flags of
-    "-" -> putStrLn (show tix')
+    "-" -> print tix'
     out -> writeTix out tix'
-map_main _     [] = hpcError map_plugin $ "no .tix file specified"
-map_main _     _  = hpcError map_plugin $ "to many .tix files specified"
+mapMain _ [] = hpcError mapPlugin "no .tix file specified"
+mapMain _ _ = hpcError mapPlugin "to many .tix files specified"
 
 mergeTixFile :: Flags -> (Integer -> Integer -> Integer) -> Tix -> String -> IO Tix
 mergeTixFile flags fn tix file_name = do
@@ -131,35 +128,29 @@ mergeTixFile flags fn tix file_name = do
 -- could allow different numbering on the module info,
 -- as long as the total is the same; will require normalization.
 
-mergeTix :: MergeFun
-         -> (Integer -> Integer -> Integer) -> Tix -> Tix -> Tix
-mergeTix modComb f
-         (Tix t1)
-         (Tix t2)  = Tix
-         [ case (Map.lookup m fm1,Map.lookup m fm2) of
-           -- todo, revisit the semantics of this combination
-            (Just (TixModule _ hash1 len1 tix1),Just (TixModule _ hash2 len2 tix2))
-               | hash1 /= hash2
-               || length tix1 /= length tix2
-               || len1 /= length tix1
-               || len2 /= length tix2
-                     -> error $ "mismatched in module " ++ m
-               | otherwise      ->
-                     TixModule m hash1 len1 (zipWith f tix1 tix2)
-            (Just m1,Nothing) ->
-                  m1
-            (Nothing,Just m2) ->
-                  m2
-            _ -> error "impossible"
-         | m <- Set.toList (theMergeFun modComb m1s m2s)
-         ]
+mergeTix :: MergeFun -> (Integer -> Integer -> Integer) -> Tix -> Tix -> Tix
+mergeTix modComb f (Tix t1) (Tix t2) =
+  Tix
+    [ case (Map.lookup m fm1, Map.lookup m fm2) of
+        -- todo, revisit the semantics of this combination
+        (Just (TixModule _ hash1 len1 tix1), Just (TixModule _ hash2 len2 tix2))
+          | hash1 /= hash2
+              || length tix1 /= length tix2
+              || len1 /= length tix1
+              || len2 /= length tix2 ->
+              error $ "mismatched in module " ++ m
+          | otherwise ->
+              TixModule m hash1 len1 (zipWith f tix1 tix2)
+        (Just m1, Nothing) ->
+          m1
+        (Nothing, Just m2) ->
+          m2
+        _ -> error "impossible"
+      | m <- Set.toList (theMergeFun modComb m1s m2s)
+    ]
   where
-   m1s = Set.fromList $ map tixModuleName t1
-   m2s = Set.fromList $ map tixModuleName t2
+    m1s = Set.fromList $ map tixModuleName t1
+    m2s = Set.fromList $ map tixModuleName t2
 
-   fm1 = Map.fromList [ (tixModuleName tix,tix)
-                      | tix <- t1
-                      ]
-   fm2 = Map.fromList [ (tixModuleName tix,tix)
-                      | tix <- t2
-                      ]
+    fm1 = Map.fromList [(tixModuleName tix, tix) | tix <- t1]
+    fm2 = Map.fromList [(tixModuleName tix, tix) | tix <- t2]
