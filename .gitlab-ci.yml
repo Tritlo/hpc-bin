@@ -4,3 +4,4 @@ build:
     - "x86_64-linux"
   script:
     - "cabal update && cabal build -w $GHC"
+    - "HPC=hpc cabal test -w $GHC"
