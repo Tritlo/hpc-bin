@@ -7,7 +7,7 @@ module HpcReport (reportPlugin) where
 
 import Control.Monad hiding (guard)
 import Data.Function
-import Data.List
+import Data.List (sort, sortBy, intercalate)
 import qualified Data.Set as Set
 import HpcFlags
 import Trace.Hpc.Mix

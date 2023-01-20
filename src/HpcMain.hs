@@ -8,7 +8,7 @@ module HpcMain (main) where
 
 import Control.Monad
 import Data.Bifunctor
-import Data.List
+import Data.List ( intercalate, partition, uncons )
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe
 import Data.Version

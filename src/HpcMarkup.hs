@@ -7,7 +7,7 @@ module HpcMarkup (markupPlugin) where
 
 import Control.Monad
 import Data.Array
-import Data.List
+import Data.List ( find, sortBy )
 import Data.Maybe
 import Data.Semigroup as Semi
 import qualified Data.Set as Set
