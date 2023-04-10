@@ -47,7 +47,7 @@ draftMain hpcflags (progName : mods) = do
       outs <-
         sequence
           [ makeDraft hpcflags1 tixModule
-#if __GLASGOW_HASKELL__ >= 970
+#if __GLASGOW_HASKELL__ >= 907
             | tixModule@(TixModule m _ _ _ _ _) <- tickCounts,
 #else
             | tixModule@(TixModule m _ _ _) <- tickCounts,
