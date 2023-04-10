@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 ---------------------------------------------------------
 -- The main program for the hpc-report tool, part of HPC.
 -- Colin Runciman and Andy Gill, June 2006
@@ -199,7 +200,11 @@ single (LocalBox _) = True
 single (BinBox {}) = False
 
 modInfo :: Flags -> Bool -> TixModule -> IO ModInfo
+#if __GLASGOW_HASKELL__ >= 963
+modInfo hpcflags qualDecList tix@(TixModule moduleName _ _ tickCounts _ _) = do
+#else
 modInfo hpcflags qualDecList tix@(TixModule moduleName _ _ tickCounts) = do
+#endif
   Mix _ _ _ _ mes <- readMixWithFlags hpcflags (Right tix)
   return (q (accumCounts (zip (map snd mes) tickCounts) mempty))
   where
@@ -209,7 +214,11 @@ modInfo hpcflags qualDecList tix@(TixModule moduleName _ _ tickCounts) = do
         else mi
 
 modReport :: Flags -> TixModule -> IO ()
+#if __GLASGOW_HASKELL__ >= 963
+modReport hpcflags tix@(TixModule moduleName _ _ _ _ _) = do
+#else
 modReport hpcflags tix@(TixModule moduleName _ _ _) = do
+#endif
   mi <- modInfo hpcflags False tix
   if xmlOutput hpcflags
     then putStrLn $ "  <module name = " ++ show moduleName ++ ">"
@@ -272,7 +281,11 @@ reportMain hpcflags (progName : mods) = do
     Just (Tix tickCounts) ->
       makeReport hpcflags1 progName $
         sortBy (\mod1 mod2 -> tixModuleName mod1 `compare` tixModuleName mod2) $
+#if __GLASGOW_HASKELL__ >= 963
+          [tix' | tix'@(TixModule m _ _ _ _ _) <- tickCounts, allowModule hpcflags1 m]
+#else
           [tix' | tix'@(TixModule m _ _ _) <- tickCounts, allowModule hpcflags1 m]
+#endif
     Nothing -> hpcError reportPlugin $ "unable to find tix file for:" ++ progName
 reportMain _ [] =
   hpcError reportPlugin "no .tix file or executable name specified"

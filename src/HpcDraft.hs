@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 module HpcDraft (draftPlugin) where
 
 import qualified Data.Map as Map
@@ -46,7 +47,11 @@ draftMain hpcflags (progName : mods) = do
       outs <-
         sequence
           [ makeDraft hpcflags1 tixModule
+#if __GLASGOW_HASKELL__ >= 963
+            | tixModule@(TixModule m _ _ _ _ _) <- tickCounts,
+#else
             | tixModule@(TixModule m _ _ _) <- tickCounts,
+#endif
               allowModule hpcflags1 m
           ]
       case outputFile hpcflags1 of
