@@ -1,6 +1,6 @@
 cabal-version: 2.2
 name: hpc-bin
-version: 0.68
+version: 0.69
 license: BSD-3-Clause
 license-File: LICENSE
 copyright: (c) Andy Gill, Colin Runciman

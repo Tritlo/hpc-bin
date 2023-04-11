@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 module HpcOverlay where
 
 import qualified Data.Map as Map
@@ -141,8 +142,11 @@ processModule modName modContents (Mix _ _ hash _ entries) locals globals = do
             Nothing -> error $ "can not find ix in dom list # " ++ show n
           | n <- [0 .. (length entries - 1)]
         ]
-
+#if __GLASGOW_HASKELL__ >= 907
+  return $ TixModule modName hash (length tixs') tixs' [0,1] [0]
+#else
   return $ TixModule modName hash (length tixs') tixs'
+#endif
 
 qualifier :: HpcPos -> Maybe Qualifier -> Bool
 qualifier _ Nothing = True
