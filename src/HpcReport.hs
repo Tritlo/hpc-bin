@@ -201,7 +201,7 @@ single (BinBox {}) = False
 
 modInfo :: Flags -> Bool -> TixModule -> IO ModInfo
 #if __GLASGOW_HASKELL__ >= 907
-modInfo hpcflags qualDecList tix@(TixModule moduleName _ _ tickCounts _ _) = do
+modInfo hpcflags qualDecList tix@(TixModule moduleName _ _ tickCounts _ _ _) = do
 #else
 modInfo hpcflags qualDecList tix@(TixModule moduleName _ _ tickCounts) = do
 #endif
@@ -215,7 +215,7 @@ modInfo hpcflags qualDecList tix@(TixModule moduleName _ _ tickCounts) = do
 
 modReport :: Flags -> TixModule -> IO ()
 #if __GLASGOW_HASKELL__ >= 907
-modReport hpcflags tix@(TixModule moduleName _ _ _ _ _) = do
+modReport hpcflags tix@(TixModule moduleName _ _ _ _ _ _) = do
 #else
 modReport hpcflags tix@(TixModule moduleName _ _ _) = do
 #endif
@@ -282,7 +282,7 @@ reportMain hpcflags (progName : mods) = do
       makeReport hpcflags1 progName $
         sortBy (\mod1 mod2 -> tixModuleName mod1 `compare` tixModuleName mod2) $
 #if __GLASGOW_HASKELL__ >= 907
-          [tix' | tix'@(TixModule m _ _ _ _ _) <- tickCounts, allowModule hpcflags1 m]
+          [tix' | tix'@(TixModule m _ _ _ _ _ _) <- tickCounts, allowModule hpcflags1 m]
 #else
           [tix' | tix'@(TixModule m _ _ _) <- tickCounts, allowModule hpcflags1 m]
 #endif

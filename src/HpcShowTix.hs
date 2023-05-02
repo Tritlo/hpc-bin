@@ -68,7 +68,7 @@ showtixMain flags (prog : modNames) = do
               | (count, ix, (pos, lab)) <- zip3 tixs' [(0 :: Int) ..] entries
             ]
 #if __GLASGOW_HASKELL__ >= 907
-          | ( TixModule modName _hash1 _ tixs' _ _,
+          | ( TixModule modName _hash1 _ tixs' _ _ _,
 #else
           | ( TixModule modName _hash1 _ tixs',
 #endif
