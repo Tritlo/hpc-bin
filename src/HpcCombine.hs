@@ -114,8 +114,8 @@ mapMain flags [first_file] = do
 
   let (Tix inside_tix) = filterTix flags tix
 #if __GLASGOW_HASKELL__ >= 907
-  let tix' = Tix [ TixModule m p i (map f t) n tr r
-                 | TixModule m p i t n tr r <- inside_tix]
+  let tix' = Tix [ TixModule m p i (map f t) n tr e g
+                 | TixModule m p i t n tr e g <- inside_tix]
 #else
   let tix' = Tix [ TixModule m p i (map f t)
                  | TixModule m p i t <- inside_tix]
@@ -141,7 +141,7 @@ mergeTix modComb f (Tix t1) (Tix t2) =
     [ case (Map.lookup m fm1, Map.lookup m fm2) of
         -- todo, revisit the semantics of this combination
 #if __GLASGOW_HASKELL__ >= 907
-        (Just (TixModule _ hash1 len1 tix1 n1 t1 r1), Just (TixModule _ hash2 len2 tix2 n2 t2 r2))
+        (Just (TixModule _ hash1 len1 tix1 n1 t1 e1 g1), Just (TixModule _ hash2 len2 tix2 n2 t2 e2 g2))
 #else
         (Just (TixModule _ hash1 len1 tix1), Just (TixModule _ hash2 len2 tix2))
 #endif
@@ -152,7 +152,7 @@ mergeTix modComb f (Tix t1) (Tix t2) =
               error $ "mismatched in module " ++ m
           | otherwise ->
 #if __GLASGOW_HASKELL__ >= 907
-              TixModule m hash1 len1 (zipWith f tix1 tix2) n2 t2 r2
+              TixModule m hash1 len1 (zipWith f tix1 tix2) n2 t2 e2 g2
 #else
               TixModule m hash1 len1 (zipWith f tix1 tix2)
 #endif

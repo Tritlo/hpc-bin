@@ -143,7 +143,7 @@ processModule modName modContents (Mix _ _ hash _ entries) locals globals = do
           | n <- [0 .. (length entries - 1)]
         ]
 #if __GLASGOW_HASKELL__ >= 907
-  return $ TixModule modName hash (length tixs') tixs' [0,0,1] [0] [0]
+  return $ TixModule modName hash (length tixs') tixs' [0,0,1] [0] [0] [0]
 #else
   return $ TixModule modName hash (length tixs') tixs'
 #endif
